@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -9,6 +10,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignUpScreen = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSignUp = () => {
+    // TODO: API 연동 로직 추가
+    console.log('Email: ', email);
+    console.log('Password: ', password);
+    Alert.alert('가입 시도', `이메일: ${email}`);
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.inputContainer}>
@@ -21,6 +32,8 @@ const SignUpScreen = () => {
               placeholder="이메일을 입력하세요"
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
@@ -30,10 +43,12 @@ const SignUpScreen = () => {
               style={styles.input}
               placeholder="비밀번호를 입력하세요"
               secureTextEntry
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
             <Text style={styles.buttonText}>가입하기</Text>
           </TouchableOpacity>
         </View>
