@@ -1,6 +1,6 @@
 import strawberry
 from ..core.dependencies import supabase_client
-from .types import User
+from .types import User, Session
 
 @strawberry.type
 class Mutation:
@@ -17,4 +17,20 @@ class Mutation:
       id=res.user.id,
       email=res.user.email,
       created_at=res.user.created_at
+    )
+  
+  @strawberry.mutation
+  def signIn(self, email: str, password: str) -> Session:
+    res = supabase_client.auth.sign_in_with_password({
+      "email": email,
+      "password": password
+    })
+    return Session(
+      access_token=res.session.access_token,
+      refresh_token=res.session.refresh_token,
+      user=User(
+        id=res.user.id,
+        email=res.user.email,
+        created_at=res.user.created_at
+      )
     )

@@ -13,3 +13,9 @@ class Query:
   @strawberry.field
   def hello(self) -> str:
     return "Hello, world!"
+  
+@strawberry.type
+class Session:
+  access_token: str
+  refresh_token: str
+  user: User
