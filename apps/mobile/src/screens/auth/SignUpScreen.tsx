@@ -6,72 +6,104 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from 'react-native';
+import { gql } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ErrorLink, onError } from "@apollo/client/link/error";
+
+const SIGNUP_MUTATION = gql`
+  mutation SignUp($email: String!, $password: String!) {
+    signUp(email: $email, password: $password) {
+      id
+      email
+      createdAt
+    }
+  }
+`;
+
+interface SignUpData {
+  signUp: {
+    id: string;
+    email: string;
+    createdAt: string;
+  }
+}
+
+interface SignUpVars {
+  email: string;
+  password: string;
+}
 
 const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignUp = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/users/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('서버 응답: ', data);
-        Alert.alert('가입 성공', `환영합니다, ${data.email}`);
-        // TODO: 로그인 화면으로 이동
-      } else {
-        const errorData = await response.json();
-        Alert.alert('가입 실패', errorData.detail || '알 수 없는 오류가 발생했습니다.');
+  const [signUp, { data, loading, error }] = useMutation<SignUpData, SignUpVars>(
+    SIGNUP_MUTATION, {
+      onCompleted: (completedData) => {
+        console.log('가입 성공: ', completedData);
+        Alert.alert('가입 성공', `환영합니다, ${completedData.signUp.email}님!`);
+      },
+      // TODO: 로그인 화면으로 이동
+      onError: (err) => {
+        console.error('가입 실패: ', err);
+        Alert.alert('가입 실패', err.message);
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('네트워크 오류', '서버와 통신 중 오류가 발생했습니다.');
-    }
+    },
+  )
+
+  const handleSignUp = async () => {
+    signUp({
+      variables: {
+        email: email,
+        password: password,
+      },
+    });
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.inputContainer}>
-        <Text style={styles.title}>회원가입</Text>
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>이메일</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="이메일을 입력하세요"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+      <View style={styles.container}>
+        <View style={styles.inputContainer}>
+          <Text style={styles.title}>회원가입</Text>
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>이메일</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="이메일을 입력하세요"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>비밀번호</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="비밀번호를 입력하세요"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>비밀번호</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="비밀번호를 입력하세요"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>가입하기</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleSignUp}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>가입하기</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -120,6 +152,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 16,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a0cfff',
   },
   buttonText: {
     color: '#fff',

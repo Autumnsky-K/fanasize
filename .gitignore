@@ -10,3 +10,4 @@ __pycache__/
 
 # Env
 **/.env
+node_modules
