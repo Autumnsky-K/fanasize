@@ -81,19 +81,57 @@
 - **GraphQL 엔드포인트 생성:**
     - `apps/server/main.py`를 수정하여 기존 REST API 로직을 제거하고, `/graphql` 경로에서 GraphQL 요청을 처리하는 `GraphQLRouter`를 추가했습니다.
 
-### 6. 백엔드: 회원가입(signUp) Mutation 구현
+### 6. 백엔드: 인증(Auth) Mutations 구현
 
 - **GraphQL 타입 정의:**
-    - `apps/server/graphql/types.py` 파일을 생성하고, `User` 타입을 `strawberry`를 이용해 정의했습니다.
+    - `apps/server/graphql/types.py` 파일을 생성하고, `User`와 `Session` 타입을 `strawberry`를 이용해 정의했습니다.
 
 - **Mutation 구현:**
-    - `apps/server/graphql/mutations.py` 파일을 생성하여 `signUp` 뮤테이션을 구현했습니다.
-    - 이 뮤테이션은 이메일과 비밀번호를 인자로 받아 `supabase_client.auth.sign_up`을 호출하여 실제 사용자 생성을 요청합니다.
+    - `apps/server/graphql/mutations.py` 파일을 생성하여 `signUp`과 `signIn` 뮤테이션을 구현했습니다.
+    - 각 뮤테이션은 Supabase Auth의 `sign_up` 및 `sign_in_with_password` 함수를 호출하여 실제 인증을 처리합니다.
 
-### 7. 디버깅 과정
+### 7. 프론트엔드: Apollo Client 연동
 
-- **`ImportError`:** `uvicorn` 실행 시 상대 경로 임포트 문제를 해결하기 위해, 실행 위치를 `apps/` 디렉토리로 변경하고 `server.main:app`과 같이 모듈 형태로 앱을 실행하도록 명령어를 수정했습니다.
-- **`NameError`:** `dependencies.py`에서 `load_dotenv` 함수를 임포트하지 않은 문제를 해결했습니다.
-- **`strawberry` 명명 규칙:** GraphQL 쿼리 시 `created_at` 필드를 찾지 못하는 문제를 통해, `strawberry`가 파이썬의 `snake_case`를 GraphQL의 `camelCase`로 자동 변환하는 특징을 학습하고 쿼리를 `createdAt`으로 수정했습니다.
-- **"Invalid Email" 오류:** Supabase 프로젝트 대시보드에서 'Email' 공급자가 비활성화되어 있던 것을 발견하고 활성화하여 문제를 해결했습니다.
-- **`await` 관련 `TypeError`:** `supabase` 라이브러리가 동기(synchronous) 방식으로 동작함에도 불구하고, 비동기(asynchronous)로 잘못 가정하여 추가했던 `async/await` 키워드를 `mutations.py`에서 다시 제거하여 최종적으로 문제를 해결했습니다.
+- **라이브러리 설치:** `@apollo/client`와 `graphql` 패키지를 `mobile` 앱에 설치했습니다.
+- **ApolloProvider 설정:** `App.tsx`에서 Apollo Client 인스턴스를 생성하고, 앱 전체를 `ApolloProvider`로 감싸 GraphQL API를 사용할 수 있도록 준비했습니다. 이 과정에서 `HttpLink`를 사용하는 최신 방식으로 코드를 수정했습니다.
+- **`SignUpScreen` 리팩토링:** 기존 `fetch` API 호출 방식을 `useMutation` 훅을 사용하는 방식으로 변경했습니다. 로딩 상태 처리, 타입스크립트 타입 정의(`SignUpData`, `SignUpVars`) 등을 통해 더 안정적이고 선언적인 코드로 개선했습니다.
+- **`SignInScreen` 구현:** `SignUpScreen`과 유사한 구조로 로그인 화면을 구현하고, `signIn` 뮤테이션과 연동했습니다.
+
+### 8. 개발 환경 문제 해결
+
+- **VS Code 인터프리터:** VS Code가 `venv`의 파이썬 인터프리터를 인식하지 못해 자동 완성이 동작하지 않는 문제를, `Python: Select Interpreter` 명령을 통해 올바른 인터프리터 경로를 지정하여 해결했습니다.
+- **Metro Bundler 의존성 문제:**
+    - **문제:** `pnpm` 모노레포 환경에서 `mobile` 앱이 프로젝트 루트의 `node_modules`에 설치된 `@babel/runtime`을 찾지 못하는 `Unable to resolve module` 오류가 반복적으로 발생했습니다.
+    - **해결:** 사용자가 직접 찾아낸 해결책에 따라, `apps/mobile/metro.config.js` 파일을 수정했습니다. `watchFolders`와 `resolver.nodeModulesPaths` 옵션을 설정하여 Metro 번들러가 모노레포 최상위의 `node_modules`를 인식하도록 하여 문제를 최종적으로 해결했습니다.
+---
+
+## 2025년 9월 23일
+
+### 9. 프론트엔드: React Navigation 설정
+
+- **목표:** 화면 간 이동을 담당하는 `React Navigation`을 설정하고, 인증(Auth) 스택과 메인(Main) 스택의 기본 구조를 구현합니다.
+
+- **라이브러리 설치:**
+    - 내비게이션 구현을 위해 필요한 라이브러리들을 설치했습니다.
+    ```bash
+    pnpm add @react-navigation/native @react-navigation/stack react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-worklets
+    ```
+
+- **`react-native-reanimated` 빌드 오류 해결:**
+    - **문제 상황:** `reanimated` 라이브러리 설치 후 `npx pod-install ios` 실행 시, `Invalid RNReanimated.podspec file: different prefix` 오류가 발생하며 `pod` 설치가 계속 실패했습니다.
+    - **원인 분석:** `reanimated`의 설치 스크립트가 pnpm 모노레포 구조에서 `react-native`의 위치를 제대로 찾지 못하는 것이 근본 원인이었습니다. 특히, 공식 문서에서 안내하는 `babel.config.js`의 플러그인 설정이 누락되어 라이브러리가 정상적으로 변환되지 않은 상태였습니다.
+    - **해결 과정:**
+        1.  `apps/mobile/babel.config.js`의 `plugins` 배열 마지막에 `'react-native-reanimated/plugin'`을 추가하여 Babel 플러그인을 활성화했습니다.
+        2.  이전에 시도했던 `Podfile` 수정을 모두 원래대로 되돌렸습니다. (Babel 플러그인 설정이 근본적인 해결책이었음)
+        3.  캐시를 초기화(`--reset-cache`)하고 앱을 재빌드하여 `pod install` 문제를 최종적으로 해결했습니다.
+
+### 10. 프론트엔드: 인증 스택 내비게이션 구현
+
+- **내비게이션 구조화:**
+    - `apps/mobile/src/navigation/RootNavigator.tsx` 파일을 생성하여 앱의 전체 내비게이션 흐름을 관리하도록 했습니다.
+    - 로그인 여부에 따라 `AuthStack`과 `MainStack`을 선택적으로 보여주는 구조를 구현했습니다. (현재는 `AuthStack`만 보이도록 고정)
+    - 내비게이션 관련 타입들을 `types.ts` 파일로 분리하여 코드의 재사용성과 유지보수성을 높였습니다.
+
+- **화면 간 이동 UX 개선:**
+    - `SignInScreen`과 `SignUpScreen`이 서로를 호출할 때, 스택이 계속 쌓이는 문제를 해결하기 위해 `navigation.navigate()` 대신 `navigation.replace()`를 사용하도록 수정했습니다.
+    - 회원가입 성공 후, `navigation.reset()`을 사용하여 스택을 `SignIn` 화면으로 초기화함으로써 더 나은 사용자 경험을 제공하도록 개선했습니다.

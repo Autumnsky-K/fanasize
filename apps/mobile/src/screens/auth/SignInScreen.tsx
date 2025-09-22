@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
+import { useNavigation } from "@react-navigation/native";
+import { AuthScreenNavigationProp } from "../../navigation/types";
 
 // 로그인 뮤테이션 정의
 const SIGNIN_MUTATION = gql`
@@ -49,6 +51,9 @@ const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // useNavigation 훅으로 navigation 객체 가져오기
+  const navigation = useNavigation<AuthScreenNavigationProp<'SignIn'>>();
+
   const [signIn, { loading }] = useMutation<SignInData, SignInVars>(
     SIGNIN_MUTATION, {
       onCompleted: (data) => {
@@ -69,6 +74,10 @@ const SignInScreen = () => {
         password: password,
       },
     });
+  };
+
+  const navigateToSignUp = () => {
+    navigation.replace('SignUp');
   };
 
   return (
@@ -109,6 +118,14 @@ const SignInScreen = () => {
             ) : (
               <Text style={styles.buttonText}>로그인</Text>
             )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton]}
+            onPress={navigateToSignUp}
+          >
+            <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+              계정이 없으신가요? 회원가입
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -166,6 +183,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#007bff',
+  },
+  secondaryButtonText: {
+    color: '#007bff',
   },
 });
 

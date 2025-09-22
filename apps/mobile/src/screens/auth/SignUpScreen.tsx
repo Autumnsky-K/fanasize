@@ -11,7 +11,8 @@ import {
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ErrorLink, onError } from "@apollo/client/link/error";
+import { useNavigation } from "@react-navigation/native";
+import { AuthScreenNavigationProp } from "../../navigation/types";
 
 const SIGNUP_MUTATION = gql`
   mutation SignUp($email: String!, $password: String!) {
@@ -40,13 +41,18 @@ const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const navigation = useNavigation<AuthScreenNavigationProp<'SignUp'>>();
+
   const [signUp, { data, loading, error }] = useMutation<SignUpData, SignUpVars>(
     SIGNUP_MUTATION, {
       onCompleted: (completedData) => {
         console.log('가입 성공: ', completedData);
-        Alert.alert('가입 성공', `환영합니다, ${completedData.signUp.email}님!`);
+        Alert.alert('가입 성공', `환영합니다, ${completedData.signUp.email}님! 로그인 화면으로 이동합니다.`);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'SignIn'}],
+        });
       },
-      // TODO: 로그인 화면으로 이동
       onError: (err) => {
         console.error('가입 실패: ', err);
         Alert.alert('가입 실패', err.message);
@@ -61,6 +67,10 @@ const SignUpScreen = () => {
         password: password,
       },
     });
+  }
+
+  const navigateToSignIn = () => {
+    navigation.replace('SignIn');
   }
 
   return (
@@ -102,6 +112,14 @@ const SignUpScreen = () => {
               ) : (
                 <Text style={styles.buttonText}>가입하기</Text>
               )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.secondaryButton]}
+              onPress={navigateToSignIn}
+            >
+              <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+                이미 계정이 있으신가요? 로그인
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -160,6 +178,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#007bff',
+  },
+  secondaryButtonText: {
+    color: '#007bff',
   },
 });
 
