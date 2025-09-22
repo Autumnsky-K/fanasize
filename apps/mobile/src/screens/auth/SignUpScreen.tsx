@@ -13,11 +13,32 @@ const SignUpScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignUp = () => {
-    // TODO: API 연동 로직 추가
-    console.log('Email: ', email);
-    console.log('Password: ', password);
-    Alert.alert('가입 시도', `이메일: ${email}`);
+  const handleSignUp = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/users/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('서버 응답: ', data);
+        Alert.alert('가입 성공', `환영합니다, ${data.email}`);
+        // TODO: 로그인 화면으로 이동
+      } else {
+        const errorData = await response.json();
+        Alert.alert('가입 실패', errorData.detail || '알 수 없는 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('네트워크 오류', '서버와 통신 중 오류가 발생했습니다.');
+    }
   }
 
   return (
