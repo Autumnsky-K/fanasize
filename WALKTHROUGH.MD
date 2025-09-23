@@ -135,3 +135,27 @@
 - **화면 간 이동 UX 개선:**
     - `SignInScreen`과 `SignUpScreen`이 서로를 호출할 때, 스택이 계속 쌓이는 문제를 해결하기 위해 `navigation.navigate()` 대신 `navigation.replace()`를 사용하도록 수정했습니다.
     - 회원가입 성공 후, `navigation.reset()`을 사용하여 스택을 `SignIn` 화면으로 초기화함으로써 더 나은 사용자 경험을 제공하도록 개선했습니다.
+
+### 11. 프론트엔드: 전역 인증 상태 관리 및 영속성 구현
+
+- **목표:** React Context API와 Keychain을 사용하여, 앱 전반에서 로그인 상태를 공유하고 앱을 재시작해도 로그인이 유지되도록 구현합니다.
+
+- **라이브러리 설치:**
+    - `pnpm --filter mobile add react-native-keychain` 명령으로 인증 토큰을 안전하게 저장할 라이브러리를 설치했습니다.
+
+- **`AuthContext` 구현:**
+    - `apps/mobile/src/contexts/AuthContext.tsx` 파일을 생성하여, `isAuthenticated` (로그인 여부)와 `isLoading` (자동 로그인 확인 중 여부) 상태를 앱 전체에서 공유할 수 있는 Context를 구현했습니다.
+    - `AuthProvider` 컴포넌트로 `App.tsx`의 `RootNavigator`를 감싸, 모든 하위 컴포넌트가 인증 상태에 접근할 수 있도록 구조를 잡았습니다.
+
+- **로그인 영속성 구현 (Keychain 연동):**
+    - `AuthContext`의 `signIn` 함수에 `Keychain.setGenericPassword`를 사용하여 토큰을 저장하는 로직을 추가했습니다.
+    - `signOut` 함수에는 `Keychain.resetGenericPassword`를 사용하여 토큰을 삭제하는 로직을 추가했습니다.
+    - `useEffect` 훅을 사용하여 `AuthProvider`가 마운트될 때 키체인에 저장된 토큰이 있는지 비동기적으로 확인하고, 토큰이 존재하면 `isAuthenticated` 상태를 `true`로 변경하는 자동 로그인 로직을 구현했습니다.
+
+- **화면 흐름 연결:**
+    - `SignInScreen`이 로그인 뮤테이션 성공 시, `AuthContext`의 `signIn` 함수를 호출하여 전역 상태를 업데이트하도록 수정했습니다.
+    - `RootNavigator`가 `AuthContext`의 `isLoading`과 `isAuthenticated` 상태를 구독하도록 수정했습니다. 이를 통해 로딩 중에는 스피너를, 로그인 상태에 따라서는 `AuthStack` 또는 `MainStack`을 조건부로 렌더링하도록 완성했습니다.
+
+- **코드 스타일 통일:**
+    - `Prettier`가 `ios`, `android`, `vendor` 폴더 등 불필요한 파일들을 포맷하려다 오류를 일으키는 문제를 해결하기 위해, `apps/mobile/.prettierignore` 파일을 추가했습니다.
+    - `pnpm --filter mobile exec prettier --write .` 명령을 실행하여 `mobile` 앱의 전체 코드 스타일을 `.prettierrc.js` 규칙에 맞게 통일했습니다.

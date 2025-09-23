@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -8,11 +8,12 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
-import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
-import { useNavigation } from "@react-navigation/native";
-import { AuthScreenNavigationProp } from "../../navigation/types";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { useNavigation } from '@react-navigation/native';
+import { AuthScreenNavigationProp } from '../../navigation/types';
+import { useAuth } from '../../contexts/AuthContext';
 
 // 로그인 뮤테이션 정의
 const SIGNIN_MUTATION = gql`
@@ -38,8 +39,8 @@ interface SignInData {
       id: string;
       email: string;
       createdAt: string;
-    }
-  }
+    };
+  };
 }
 
 interface SignInVars {
@@ -54,13 +55,17 @@ const SignInScreen = () => {
   // useNavigation 훅으로 navigation 객체 가져오기
   const navigation = useNavigation<AuthScreenNavigationProp<'SignIn'>>();
 
+  const { login: contextSignIn } = useAuth();
+
   const [signIn, { loading }] = useMutation<SignInData, SignInVars>(
-    SIGNIN_MUTATION, {
-      onCompleted: (data) => {
-        console.log('로그인 성공: Access Token: ', data.signIn.accessToken);
-        Alert.alert('로그인 성공', `환영합니다, ${data.signIn.user.email}님!`);
+    SIGNIN_MUTATION,
+    {
+      onCompleted: data => {
+        if (data.signIn.accessToken) {
+          contextSignIn(data.signIn.accessToken);
+        }
       },
-      onError: (err) => {
+      onError: err => {
         console.error('로그인 실패: ', err);
         Alert.alert('로그인 실패', err.message);
       },
@@ -130,8 +135,8 @@ const SignInScreen = () => {
         </View>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {

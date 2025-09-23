@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = () => {
   return (
@@ -9,8 +9,8 @@ const HomeScreen = () => {
         <Text style={styles.title}>Home Screen</Text>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default HomeScreen;

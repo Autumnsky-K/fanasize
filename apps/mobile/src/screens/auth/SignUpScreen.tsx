@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -8,11 +8,11 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import { gql } from "@apollo/client";
-import { useMutation } from "@apollo/client/react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { AuthScreenNavigationProp } from "../../navigation/types";
+import { gql } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { AuthScreenNavigationProp } from '../../navigation/types';
 
 const SIGNUP_MUTATION = gql`
   mutation SignUp($email: String!, $password: String!) {
@@ -29,7 +29,7 @@ interface SignUpData {
     id: string;
     email: string;
     createdAt: string;
-  }
+  };
 }
 
 interface SignUpVars {
@@ -43,22 +43,26 @@ const SignUpScreen = () => {
 
   const navigation = useNavigation<AuthScreenNavigationProp<'SignUp'>>();
 
-  const [signUp, { data, loading, error }] = useMutation<SignUpData, SignUpVars>(
-    SIGNUP_MUTATION, {
-      onCompleted: (completedData) => {
-        console.log('가입 성공: ', completedData);
-        Alert.alert('가입 성공', `환영합니다, ${completedData.signUp.email}님! 로그인 화면으로 이동합니다.`);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'SignIn'}],
-        });
-      },
-      onError: (err) => {
-        console.error('가입 실패: ', err);
-        Alert.alert('가입 실패', err.message);
-      }
+  const [signUp, { data, loading, error }] = useMutation<
+    SignUpData,
+    SignUpVars
+  >(SIGNUP_MUTATION, {
+    onCompleted: completedData => {
+      console.log('가입 성공: ', completedData);
+      Alert.alert(
+        '가입 성공',
+        `환영합니다, ${completedData.signUp.email}님! 로그인 화면으로 이동합니다.`,
+      );
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'SignIn' }],
+      });
     },
-  )
+    onError: err => {
+      console.error('가입 실패: ', err);
+      Alert.alert('가입 실패', err.message);
+    },
+  });
 
   const handleSignUp = async () => {
     signUp({
@@ -67,11 +71,11 @@ const SignUpScreen = () => {
         password: password,
       },
     });
-  }
+  };
 
   const navigateToSignIn = () => {
     navigation.replace('SignIn');
-  }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -125,8 +129,8 @@ const SignUpScreen = () => {
         </View>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -189,4 +193,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignUpScreen
+export default SignUpScreen;
