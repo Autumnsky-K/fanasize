@@ -17,9 +17,9 @@ const LIST_POSTS_QUERY = gql`
     listPosts {
       id
       content
-      image_url
-      created_at
-      user_id
+      imageUrl
+      createdAt
+      userId
     }
   }
 `;
@@ -57,6 +57,12 @@ const HomeScreen = () => {
         renderItem={({ item }: { item: Post }) => <PostCard post={item} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>게시물이 아직 없습니다.</Text>
+            <Text style={styles.emptyText}>첫 게시물을 작성해보세요!</Text>
+          </View>
+        )}
       />
     </SafeAreaView>
   );
@@ -80,6 +86,15 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 10,
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#888',
+  }
 });
 
 export default HomeScreen;

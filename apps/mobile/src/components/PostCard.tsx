@@ -6,9 +6,9 @@ import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
 export interface Post {
   id: string;
   content: string | null;
-  image_url: string | null;
-  created_at: string;
-  user_id: string;
+  imageUrl: string | null;
+  createdAt: string;
+  userId: string;
 }
 
 interface PostCardProps {
@@ -22,7 +22,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       <View style={styles.header}>
         <Text style={styles.author}>아티스트</Text>
         <Text style={styles.date}>
-          {new Date(post.created_at).toLocaleDateString()}
+          {new Date(post.createdAt).toLocaleDateString()}
         </Text>
       </View>
 
@@ -30,8 +30,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {post.content && <Text style={styles.content}>{post.content}</Text>}
 
       {/* 게시물 이미지 */}
-      {post.image_url && (
-        <Image source={{ uri: post.image_url }} style={styles.image} />
+      {post.imageUrl && (
+        <Image source={{ uri: post.imageUrl }} style={styles.image} />
       )}
     </View>
   );

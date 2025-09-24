@@ -7,6 +7,13 @@ import React, {
 } from 'react';
 import * as Keychain from 'react-native-keychain';
 
+export const Mode = {
+  PRODUCTION: 'PRODUCTION',
+  TEST: 'TEST',
+} as const;
+
+export type Mode = typeof Mode[keyof typeof Mode];
+
 // Context에 저장할 값들의 타입 정의
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -21,15 +28,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Context를 제공하는 컴포넌트 정의
 interface AuthProviderProps {
   children: ReactNode;
+  mode: Mode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider = ({ children, mode }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const loadToken = async () => {
       try {
+        // 테스트 모드일 경우, 저장된 토큰을 삭제
+        if (mode === Mode.TEST) {
+          console.log('--- TEST MODE: Keychain 초기화 ---');
+          await Keychain.resetGenericPassword();
+        }
         const credentials = await Keychain.getGenericPassword();
         if (credentials) {
           console.log('저장된 토큰 발견, 로그인 상태로 변경합니다.');
@@ -44,7 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     loadToken();
-  }, []);
+  }, [mode]);
 
   const signIn = async (token: string) => {
     try {
