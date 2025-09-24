@@ -1,13 +1,16 @@
 import strawberry
-from ..core.dependencies import supabase_client
-from .types import User, Session
+from strawberry.types import Info
+from typing import Optional
+
+from .types import User, Session, PostType
 
 @strawberry.type
 class Mutation:
   @strawberry.mutation
-  def signUp(self, email: str, password: str) -> User:
+  async def signUp(self, email: str, password: str, info: Info) -> User:
+    supabase_client = info.context["supabase_client"]
     # Supabase Auth를 사용하여 사용자를 생성
-    res = supabase_client.auth.sign_up({
+    res = await supabase_client.auth.sign_up({
       "email": email,
       "password": password
     })
@@ -20,8 +23,9 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def signIn(self, email: str, password: str) -> Session:
-    res = supabase_client.auth.sign_in_with_password({
+  async def signIn(self, email: str, password: str, info: Info) -> Session:
+    supabase_client = info.context["supabase_client"]
+    res = await supabase_client.auth.sign_in_with_password({
       "email": email,
       "password": password
     })
@@ -33,4 +37,40 @@ class Mutation:
         email=res.user.email,
         created_at=res.user.created_at
       )
+    )
+  
+  @strawberry.mutation
+  async def create_post(
+    self,
+    info: Info,
+    content: str,
+    image_url: Optional[str] = None
+  ) -> PostType:
+    """새로운 게시물 작성. 인증된 사용자만 호출 가능."""
+
+    user = info.context.get("user")
+    if not user:
+      raise Exception("인증이 필요합니다.")
+    
+    supabase_client = info.context["supabase_client"]
+
+    # 'posts' 테이블에 새로운 데이터를 삽입
+    response = await supabase_client.table("posts").insert({
+      "content": content,
+      "image_url": image_url,
+      "user_id": str(user.id)
+    }).execute()
+
+    if not response.data:
+      raise Exception("게시물을 생성하지 못했습니다.")
+    
+    new_post_data = response.data[0]
+
+    # 생성된 데이터를 PostType으로 변환하여 반환
+    return PostType(
+      id=new_post_data['id'],
+      created_at=new_post_data['created_at'],
+      user_id=new_post_data['user_id'],
+      content=new_post_data['content'],
+      image_url=new_post_data['image_url'],
     )

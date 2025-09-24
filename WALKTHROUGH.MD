@@ -159,3 +159,25 @@
 - **코드 스타일 통일:**
     - `Prettier`가 `ios`, `android`, `vendor` 폴더 등 불필요한 파일들을 포맷하려다 오류를 일으키는 문제를 해결하기 위해, `apps/mobile/.prettierignore` 파일을 추가했습니다.
     - `pnpm --filter mobile exec prettier --write .` 명령을 실행하여 `mobile` 앱의 전체 코드 스타일을 `.prettierrc.js` 규칙에 맞게 통일했습니다.
+
+---
+
+## 2025년 9월 24일
+
+### 12. 백엔드: 게시물(Post) API 구현 및 의존성 주입 문제 해결
+
+- **의존성 주입 리팩토링 (Context 패턴 도입):**
+    - **문제 상황:** `supabase_async_client`를 GraphQL 리졸버에 주입하는 과정에서, Strawberry가 `AsyncClient` 타입을 스키마에 포함시키려다 `TypeError: Unexpected type` 오류를 지속적으로 발생시켰습니다.
+    - **원인 분석:** 리졸버 함수의 인자 타입 힌트로 `AsyncClient`가 노출되는 것이 근본 원인이었습니다. `Private`이나 `Annotated` 같은 래퍼 타입으로도 이 문제를 해결할 수 없었습니다.
+    - **해결 과정 (Context 패턴):** Strawberry의 공식적인 의존성 주입 방식인 'Context' 패턴을 도입하여 문제를 해결했습니다.
+        1.  `graphql/context.py`를 생성하고, `Depends`를 통해 클라이언트를 받아 딕셔너리에 담아 반환하는 `get_context` 함수를 정의했습니다.
+        2.  `main.py`의 `GraphQLRouter`를 생성할 때 `context_getter=get_context` 옵션을 추가하여, 모든 요청에 대해 `get_context`가 반환하는 딕셔너리를 주입하도록 설정했습니다.
+        3.  모든 리졸버(`queries.py`, `mutations.py`)의 시그니처에서 `supabase_client` 인자를 제거하고, 대신 표준 `info: Info` 인자를 통해 `info.context['supabase_client']`로 의존성에 접근하도록 코드를 전면 수정했습니다.
+
+- **게시물 API 기능 구현:**
+    - **인증 로직 추가:** `get_context` 함수 내에서 요청 헤더의 `Authorization` 토큰을 읽고, `supabase.auth.get_user()`를 통해 토큰을 검증하여 유효한 사용자 정보를 컨텍스트에 포함시키는 로직을 추가했습니다.
+    - **`createPost` 뮤테이션 구현:** 인증된 사용자만 호출할 수 있는 `createPost` 뮤테이션을 구현했습니다. 이 뮤테이션은 `info.context`에서 사용자 정보를 확인하고, 해당 사용자의 ID를 포함하여 새로운 게시물을 `posts` 테이블에 생성합니다.
+
+- **결과:**
+    - 반복되던 서버 실행 오류가 해결되었고, 안정적인 의존성 주입 구조를 확립했습니다.
+    - 게시물 조회(`listPosts`) 및 생성(`createPost`)을 위한 백엔드 API 기능 구현이 완료되었습니다.
