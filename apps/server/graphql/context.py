@@ -1,18 +1,17 @@
-from supabase import AsyncClient
-from fastapi import Depends, Request
+from fastapi import Request
+import os
 
-from ..core.dependencies import get_supabase_client
+from ..core import dependencies
 
-async def get_context(
-    request: Request,
-    supabase_client: AsyncClient = Depends(get_supabase_client),
-):
+async def get_context(request: Request):
   """
   모든 GraphQL 리졸버에 공유될 컨텍스트를 생성
   이 컨텍스트 딕셔너리에 supabase_client를 담아 전달
   """
   user = None
   authorization = request.headers.get("Authorization")
+
+  supabase_client = dependencies.supabase_client
 
   if authorization and authorization.startswith("Bearer "):
     token = authorization.split(" ")[1]

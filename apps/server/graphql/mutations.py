@@ -1,7 +1,6 @@
 import strawberry
 from strawberry.types import Info
 from typing import Optional
-
 from .types import User, Session, PostType
 
 @strawberry.type
@@ -15,7 +14,7 @@ class Mutation:
       "password": password
     })
 
-    # Supabase로부터 받은 사용자 정보를 우리가 정의한 User 타입으로 변환하여 반환
+    # Supabase로부터 받은 사용자 정보를 User 타입으로 변환하여 반환
     return User(
       id=res.user.id,
       email=res.user.email,
@@ -29,16 +28,17 @@ class Mutation:
       "email": email,
       "password": password
     })
+    user_data = User(
+      id=res.user.id,
+      email=res.user.email,
+      created_at=res.user.created_at
+    )
     return Session(
       access_token=res.session.access_token,
       refresh_token=res.session.refresh_token,
-      user=User(
-        id=res.user.id,
-        email=res.user.email,
-        created_at=res.user.created_at
-      )
+      user=user_data
     )
-  
+
   @strawberry.mutation
   async def create_post(
     self,
@@ -70,7 +70,7 @@ class Mutation:
     return PostType(
       id=new_post_data['id'],
       created_at=new_post_data['created_at'],
-      user_id=new_post_data['user_id'],
       content=new_post_data['content'],
+      user_id=new_post_data['user_id'],
       image_url=new_post_data['image_url'],
     )
