@@ -1,5 +1,4 @@
 from fastapi import Request
-import os
 
 from ..core import dependencies
 
