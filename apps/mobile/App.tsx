@@ -5,20 +5,7 @@ import { ApolloProvider } from '@apollo/client/react';
 import { Platform } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider, Mode } from './src/contexts/AuthContext';
-
-const backendUrl =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:8000/graphql'
-    : 'http://localhost:8000/graphql';
-
-const httpLink = new HttpLink({
-  uri: backendUrl,
-});
-
-const client = new ApolloClient({
-  link: httpLink,
-  cache: new InMemoryCache(),
-});
+import { client } from './src/libs/apollo';
 
 const CURRENT_MODE = Mode.PRODUCTION;
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,30 +7,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
 import PostCard, { Post } from '../../components/PostCard';
-
-// 백엔드에 요청할 listPosts 쿼리 정의
-const LIST_POSTS_QUERY = gql`
-  query ListPosts {
-    listPosts {
-      id
-      content
-      imageUrl
-      createdAt
-      userId
-    }
-  }
-`;
-
-interface ListPostData {
-  listPosts: Post[];
-}
+import { usePostStore } from '../../store/postStore';
 
 const HomeScreen = () => {
-  // useQuery 훅 사용하여 백엔드에 쿼리 요청
-  const { data, loading, error } = useQuery<ListPostData>(LIST_POSTS_QUERY);
+  // Zustand 스토어에서 상태와 액션 가져오기
+  const { posts, loading, error, fetchPosts } = usePostStore();
+
+  // 컴포넌트 마운트 시 fetchPosts 액션 호출
+  useEffect(() => {
+    fetchPosts();
+  }, []); // 빈 배열을 전달하여 한 번만 실행
 
   // 로딩 중일 때 로딩 인디케이터 표시
   if (loading) {
@@ -45,7 +32,7 @@ const HomeScreen = () => {
   if (error) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Text>에러가 발생했습니다: {error.message}</Text>
+        <Text>에러가 발생했습니다: {error}</Text>
       </SafeAreaView>
     );
   }
@@ -53,7 +40,7 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={data?.listPosts || []}
+        data={posts}
         renderItem={({ item }: { item: Post }) => <PostCard post={item} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
