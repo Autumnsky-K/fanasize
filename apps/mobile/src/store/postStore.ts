@@ -1,5 +1,3 @@
-
-
 import { create } from "zustand";
 import { gql } from "@apollo/client";
 import { client } from "../libs/apollo";
@@ -18,6 +16,14 @@ const LIST_POSTS_QUERY = gql`
   }
 `;
 
+const CREATE_POST_MUTATION = gql`
+  mutation CreatePost($content: String!) {
+    createPost(content: $content) {
+      id
+    }
+  }
+`;
+
 interface ListPostData {
   listPosts: Post[];
 }
@@ -27,9 +33,10 @@ interface PostState {
   loading: boolean;
   error: string | null;
   fetchPosts: () => Promise<void>;
+  createPost: (content: string) => Promise<void>;
 }
 
-export const usePostStore = create<PostState>((set) => ({
+export const usePostStore = create<PostState>((set, get) => ({
   posts: [],
   loading: false,
   error: null,
@@ -55,4 +62,21 @@ export const usePostStore = create<PostState>((set) => ({
       }
     }
   },
+  createPost: async (content: string) => {
+    try {
+      // TODO: 이미지 업로드 기능 구현. content와 함께 imageUrl도 인자로 받아 처리 필요.
+      // 1. 이미지 선택 (Image Picker)
+      // 2. 이미지 변환 (WebP) 및 supabase 스토리지에 업로드
+      // 3. 업로드 된 이미지 URL을 아래 variables에 추가
+      await client.mutate({
+        mutation: CREATE_POST_MUTATION,
+        variables: { content },
+      });
+      await get().fetchPosts();
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        console.error('포스트를 게시하지 못했어요: ', e.message);
+      }
+    }
+  }
 }));
