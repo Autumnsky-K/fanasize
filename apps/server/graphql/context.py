@@ -17,8 +17,9 @@ async def get_context(request: Request):
     try:
       # 토큰 검증 및 사용자 정보 가져오기
       user = await supabase_client.auth.get_user(token)
-    except Exception:
+    except Exception as e:
       # 토큰이 유효하지 않을 경우 user는 None으로 유지
+      print(f"--- Token Validation Error: {e} ---")
       pass
 
   return {

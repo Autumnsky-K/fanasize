@@ -1,6 +1,8 @@
 import strawberry
 from typing import List
 from strawberry.types import Info
+import datetime
+
 from .types import PostType
 
 @strawberry.type
@@ -15,5 +17,8 @@ class Query:
     if not response.data:
       return []
     
-    posts = [PostType(**post) for post in response.data]
+    posts = []
+    for post_data in response.data:
+      post_data['created_at'] = datetime.datetime.fromisoformat(post_data['created_at'])
+      posts.append(PostType(**post_data))
     return posts

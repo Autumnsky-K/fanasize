@@ -1,6 +1,8 @@
 import strawberry
 from strawberry.types import Info
 from typing import Optional
+import datetime
+
 from .types import User, Session, PostType
 
 @strawberry.type
@@ -66,10 +68,12 @@ class Mutation:
     
     new_post_data = response.data[0]
 
+    created_at_datetime = datetime.datetime.fromisoformat(new_post_data['created_at'])
+
     # 생성된 데이터를 PostType으로 변환하여 반환
     return PostType(
       id=new_post_data['id'],
-      created_at=new_post_data['created_at'],
+      created_at=created_at_datetime,
       content=new_post_data['content'],
       user_id=new_post_data['user_id'],
       image_url=new_post_data['image_url'],
