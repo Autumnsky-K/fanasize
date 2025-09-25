@@ -7,7 +7,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider, Mode } from './src/contexts/AuthContext';
 import { client } from './src/libs/apollo';
 
-const CURRENT_MODE = Mode.PRODUCTION;
+const CURRENT_MODE = Mode.TEST;
 
 function App(): React.JSX.Element {
   return (

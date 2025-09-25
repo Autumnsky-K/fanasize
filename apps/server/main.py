@@ -3,23 +3,18 @@ from fastapi import FastAPI
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 from supabase import create_async_client
-from dotenv import load_dotenv
 
 from .graphql.queries import Query
 from .graphql.mutations import Mutation
 from .graphql.context import get_context
-from .core.dependencies import SUPABASE_KEY, SUPABASE_URL
-from .core import dependencies
-
-# .env 파일로부터 환경 변수 로드
-load_dotenv()
+from .core import dependencies, config
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   print("--- 앱 시작: Supabase 클라이언트 생성 시도 ---")
   dependencies.supabase_client = await create_async_client(
-    SUPABASE_URL,
-    SUPABASE_KEY,
+    config.SUPABASE_URL,
+    config.SUPABASE_KEY,
   )
   print("--- 앱 시작: Supabase 클라이언트 생성 완료 ---")
   yield
