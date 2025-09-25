@@ -219,3 +219,16 @@
     - `AuthContext.tsx`에 `as const` 패턴을 사용하여 `Mode.TEST`와 `Mode.PRODUCTION`을 정의했습니다.
     - `AuthProvider`가 `mode` prop을 받도록 수정한 후, `useEffect` 훅 내부에서 `mode`가 `TEST`일 경우 `Keychain.resetGenericPassword()`를 호출하여 저장된 세션을 삭제하는 로직을 추가했습니다.
     - `App.tsx`에서 `CURRENT_MODE` 상수를 통해 앱의 모드를 쉽게 변경할 수 있도록 구조를 개선했습니다.
+
+### 16. 서버: `load_dotenv` 임포트 순서 문제 해결
+
+- **문제 상황:** FastAPI 서버 실행 시, `main.py`에 있는 `load_dotenv()`가 `core/dependencies.py` 모듈이 임포트된 후에 실행되는 문제가 발생했습니다. 이로 인해 `dependencies.py`가 모듈 레벨에서 환경 변수를 읽으려고 할 때, 아직 `.env` 파일이 로드되지 않아 오류가 발생했습니다.
+
+- **원인:** 파이썬은 `import` 구문을 만나면 해당 모듈의 코드를 즉시 실행합니다. 따라서 `main.py`가 `dependencies.py`를 임포트하는 순간, `main.py`의 `load_dotenv()` 실행 시점까지 기다려주지 않고 `dependencies.py`의 코드가 먼저 실행되어 문제가 발생한 것입니다.
+
+- **해결 과정: 설정 중앙화**
+    1.  **`core/config.py` 생성**: 이 파일 내에서 `load_dotenv()`를 가장 먼저 호출하고, `os.getenv`를 통해 환경 변수를 읽어 파이썬 상수로 내보냈습니다. 필수 변수가 없을 경우 서버 시작 시 즉시 에러를 발생시키도록 처리했습니다.
+    2.  **`dependencies.py` 리팩토링**: 환경 변수를 직접 읽는 모든 로직을 제거하고, 다른 모듈에서 참조할 `supabase_client` 변수를 선언하는 역할만 하도록 단순화했습니다.
+    3.  **`main.py` 리팩토링**: `lifespan` 함수가 `core.config` 모듈에서 URL과 KEY를 직접 임포트하여 Supabase 클라이언트를 생성하도록 수정했습니다.
+
+- **결과:** 이를 통해 어떤 모듈이 먼저 임포트되더라도 항상 `config.py`가 설정을 가장 먼저 로드하게 되어, 임포트 순서에 따른 문제를 근본적으로 해결하고 코드의 안정성과 유지보수성을 높였습니다.
