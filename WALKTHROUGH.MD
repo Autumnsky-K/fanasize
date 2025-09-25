@@ -195,3 +195,27 @@
     - `useQuery` 훅을 사용하여 컴포넌트가 렌더링될 때 백엔드에 데이터를 요청하도록 구현했습니다.
     - `loading`, `error` 상태를 분기하여 로딩 중에는 스피너를, 오류 발생 시에는 에러 메시지를 표시하는 등 사용자 경험을 고려한 UI 로직을 추가했습니다.
     - 데이터 로딩이 완료되면 `FlatList` 컴포넌트를 사용해 `PostCard` 목록을 효율적으로 렌더링하도록 구현했습니다.
+
+---
+
+## 2025년 9월 25일
+
+### 14. 서버 안정성 확보 및 리팩토링
+
+- **문제 상황:** `lifespan`을 이용한 초기화 로직 도입 후, `NoneType` 오류 및 순환 참조 오류가 발생하는 등 앱 실행에 문제가 있었습니다.
+- **원인 분석:**
+    1.  **순환 참조:** `main.py`가 `context.py`를, `context.py`가 다시 `main.py`를 임포트하면서 발생했습니다.
+    2.  **Stale Import:** `from ... import variable` 구문이 변수의 '현재 값'을 복사해오는 파이썬의 동작 방식 때문에, `lifespan`에서 값이 할당되기 전의 `None` 값을 계속 참조하는 문제가 있었습니다.
+- **최종 해결:**
+    1.  `dependencies.py`를 `supabase_client` 객체를 담는 유일한 저장소로 지정했습니다. (`supabase_client = None`)
+    2.  `main.py`의 `lifespan`에서 앱 시작 시 `dependencies.supabase_client`에 클라이언트 객체를 **할당**하도록 수정했습니다.
+    3.  `context.py`에서는 `from dependencies import supabase_client` 대신, `import dependencies` 후 `dependencies.supabase_client`로 **참조**하도록 수정하여 항상 최신 객체를 바라보게 했습니다.
+- **결과:** 모든 서버 시작 및 런타임 오류를 해결하고, 앱의 생명주기 동안 단 하나의 클라이언트 인스턴스만 유지하는 효율적이고 안정적인 아키텍처를 최종적으로 확립했습니다.
+
+### 15. 프론트엔드: 테스트 모드 기능 구현
+
+- **목표:** 인증 관련 기능을 쉽게 테스트하기 위해, 앱 시작 시 저장된 로그인 정보를 초기화하는 '테스트 모드'를 구현합니다.
+- **구현:**
+    - `AuthContext.tsx`에 `as const` 패턴을 사용하여 `Mode.TEST`와 `Mode.PRODUCTION`을 정의했습니다.
+    - `AuthProvider`가 `mode` prop을 받도록 수정한 후, `useEffect` 훅 내부에서 `mode`가 `TEST`일 경우 `Keychain.resetGenericPassword()`를 호출하여 저장된 세션을 삭제하는 로직을 추가했습니다.
+    - `App.tsx`에서 `CURRENT_MODE` 상수를 통해 앱의 모드를 쉽게 변경할 수 있도록 구조를 개선했습니다.
