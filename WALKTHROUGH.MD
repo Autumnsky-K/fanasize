@@ -254,3 +254,33 @@
     - **진단:** `createPost`와 `listPosts` 리졸버가 데이터베이스에서 받은 날짜 **문자열**을 `datetime` **객체**로 변환하지 않고 `PostType`에 전달하는 것을 확인했습니다.
     - **해결:** `mutations.py`와 `queries.py` 양쪽 모두에서 `datetime.datetime.fromisoformat()`을 사용하여 날짜 문자열을 `datetime` 객체로 변환하는 로직을 추가하여 문제를 해결했습니다.
 - **최종 확인:** 텍스트 기반의 게시물 작성 및 목록 새로고침 기능이 정상 동작하는 것을 최종적으로 확인했습니다.
+
+---
+
+## 2025년 9월 27일
+
+### 18. 프론트엔드: 토큰 자동 갱신 기능 구현 및 디버깅
+
+- **목표:** 사용자 세션의 안정성을 강화하고, 토큰 만료 시 자동으로 세션을 갱신하여 요청을 재시도하는 기능을 구현합니다.
+
+- **주요 구현 내용:**
+    1.  **`libs/auth.ts` 구현:**
+        *   `@react-native-async-storage/async-storage`를 `supabase-js`의 세션 저장소로 사용하도록 변경했습니다.
+        *   `supabase` 클라이언트 초기화 로직을 포함하고, `getAccessToken`, `refreshAuthSession` 유틸리티 함수를 구현했습니다.
+        *   `react-native-url-polyfill`을 적용하여 React Native 환경에서 `URL` 객체 호환성 문제를 해결했습니다.
+        *   `react-native-dotenv`를 설정하여 `.env` 파일에서 환경 변수를 로드하도록 했습니다.
+    2.  **`AuthContext.tsx` 리팩토링:**
+        *   `supabase` 클라이언트 기반으로 세션 관리 로직을 중앙화했습니다.
+        *   `onAuthStateChange` 리스너를 사용하여 `isAuthenticated` 및 `isLoading` 상태를 관리하도록 변경했습니다.
+        *   `signIn` 및 `signOut` 함수가 `supabase` 클라이언트의 메소드를 직접 호출하도록 수정했습니다.
+    3.  **`libs/apollo.ts`에 `ErrorLink` 구현:**
+        *   Apollo Client의 `ErrorLink`를 구현하여 GraphQL 요청 중 인증 관련 에러(토큰 만료 등) 발생 시 자동으로 `refreshAuthSession`을 호출하여 토큰을 갱신하고, 실패했던 요청을 재시도하는 로직을 추가했습니다.
+        *   `SetContextLink`와 `ApolloLink.from` 등 최신 Apollo Client API를 적용했습니다.
+    4.  **`SignInScreen.tsx` 수정:** `AuthContext`의 `signIn` 함수 시그니처 변경에 맞춰 `onCompleted` 콜백 로직을 수정했습니다.
+
+- **디버깅 과정:**
+    *   **'TypeError: Cannot assign to property 'protocol'' 오류:** `supabase-js`의 `URL` 객체 호환성 문제. `react-native-url-polyfill` 적용으로 해결.
+    *   **`.env` 파일 미로드 오류:** `react-native-dotenv` 설정 및 `babel.config.js`, `tsconfig.json` 수정으로 해결.
+    *   **`Keychain` 저장/로드 문제:** `supabase-js`가 `AsyncStorage`를 기대하는 문제. `react-native-keychain` 대신 `@react-native-async-storage/async-storage`로 전환하여 해결.
+
+- **결과:** 최종적으로 토큰 만료 시 자동으로 세션을 갱신하고 요청을 재시도하는 기능이 정상 동작하는 것을 확인했습니다.
