@@ -2340,7 +2340,7 @@ PODS:
     - React-perflogger (= 0.81.4)
     - React-utils (= 0.81.4)
     - SocketRocket
-  - RNGestureHandler (2.28.0):
+  - RNCAsyncStorage (2.2.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2368,7 +2368,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNKeychain (10.0.0):
+  - RNGestureHandler (2.28.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2712,8 +2712,8 @@ DEPENDENCIES:
   - ReactAppDependencyProvider (from `build/generated/ios`)
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
-  - RNKeychain (from `../node_modules/react-native-keychain`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
@@ -2868,10 +2868,10 @@ EXTERNAL SOURCES:
     :path: build/generated/ios
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
+  RNCAsyncStorage:
+    :path: "../node_modules/@react-native-async-storage/async-storage"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
-  RNKeychain:
-    :path: "../node_modules/react-native-keychain"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
@@ -2884,12 +2884,12 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
-  fast_float: 914e00b8b67cb8ba184a778c7bbc2e9fe98d37b3
+  fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 941bef1c8eeabd9fe1f501e30a5220beee913886
-  fmt: b85d977e8fe789fd71c77123f9f4920d88c4d170
-  glog: 682871fb30f4a65f657bf357581110656ea90b08
-  hermes-engine: e3c59961118630332d6f4f9dbef0dece625f6b76
-  RCT-Folly: fb64616e25cfac1c3d10bfd784d68926325ae67f
+  fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
+  glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
+  hermes-engine: 35c763d57c9832d0eef764316ca1c4d043581394
+  RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: c0ed3249a97243002615517dff789bf4666cf585
   RCTRequired: 58719f5124f9267b5f9649c08bf23d9aea845b23
   RCTTypeSafety: 4aefa8328ab1f86da273f08517f1f6b343f6c2cc
@@ -2953,8 +2953,8 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 433ddfb4536948630aadd5bd925aff8a632d2fe3
   ReactCodegen: 788a82e7c0477183563a14b5099a535afb838c4d
   ReactCommon: 394c6b92765cf6d211c2c3f7f6bc601dffb316a6
+  RNCAsyncStorage: 29f0230e1a25f36c20b05f65e2eb8958d6526e82
   RNGestureHandler: 3a73f098d74712952870e948b3d9cf7b6cae9961
-  RNKeychain: a2c134ab796272c3d605e035ab727591000b30f3
   RNReanimated: fdcc9ac02db30f7cc6df998e2e37c8cc2f678d4b
   RNScreens: 0bbf16c074ae6bb1058a7bf2d1ae017f4306797c
   RNWorklets: 0ff8f03b765712ed034df968ec1d38d486fdd57b

@@ -39,10 +39,6 @@ const MainStackNavigator = () => {
 const RootNavigator = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  console.log("=======================================");
-  console.log("로그인 상태 확인 중입니다.");
-  console.log("=======================================");
-
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

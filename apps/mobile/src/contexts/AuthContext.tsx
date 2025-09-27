@@ -5,7 +5,9 @@ import React, {
   ReactNode,
   useEffect,
 } from 'react';
-import * as Keychain from 'react-native-keychain';
+
+import { Session } from '../graphql/types';
+import { supabase } from '../libs/auth';
 
 export const Mode = {
   PRODUCTION: 'PRODUCTION',
@@ -18,8 +20,8 @@ export type Mode = typeof Mode[keyof typeof Mode];
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string) => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (session: Session) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 // Context 생성
@@ -36,54 +38,70 @@ export const AuthProvider = ({ children, mode }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const loadToken = async () => {
-      try {
-        // 테스트 모드일 경우, 저장된 토큰을 삭제
-        if (mode === Mode.TEST) {
-          console.log('--- TEST MODE: Keychain 초기화 ---');
-          await Keychain.resetGenericPassword();
+    // Supabase auth 상태 변경 리스너 추가
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (mode === Mode.TEST && event === 'INITIAL_SESSION') {
+          // 테스트 모드일 때 초기 세션에서 로그아웃
+          console.log('--- TEST MODE: Supabase 세셔 초기화 ---');
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
         }
-        const credentials = await Keychain.getGenericPassword();
-        if (credentials) {
-          console.log('저장된 토큰 발견, 로그인 상태로 변경합니다.');
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Keychain 불러오기 실패', error);
-      } finally {
-        // 로딩 상태는 작업이 종료된 후 무조건 종료되도록 수정
-        setIsLoading(false);
-      }
-    };
 
-    loadToken();
+        if (event === 'SIGNED_IN'
+          || event === 'TOKEN_REFRESHED'
+          || event === 'INITIAL_SESSION') {
+            if (session) {
+              setIsAuthenticated(true);
+              console.log('유효한 세션 발견 또는 갱신, 로그인 상태로 변경.');
+            } else {
+              setIsAuthenticated(false);
+              console.log('세션 없음 또는 유효하지 않음.');
+            }
+        } else if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
+          console.log('로그아웃 이벤트 발생.');
+        }
+        setIsLoading(false);  // 첫 이벤트 발생 시 로딩 종료
+      }
+    );
+
+    return () => {
+      authListener?.subscription.unsubscribe(); // 컴포넌트 언마운트 시 리스너 해제
+    }
   }, [mode]);
 
-  const signIn = async (token: string) => {
+  const signIn = async (session: Session) => {
     try {
-      await Keychain.setGenericPassword('session', token);
-      setIsAuthenticated(true);
-      console.log('토큰 저장 및 로그인 상태 변경 완료');
+      // Supabase 클라이언트에 세션 정보를 명시적으로 설정
+      // GraphQL SignIn 뮤테이션 성공 후 Supabase 클라이언트 내부의 상태를 업데이트
+      const why = await supabase.auth.setSession({
+        access_token: session.accessToken,
+        refresh_token: session.refreshToken,
+      });
+      console.log('Supabase 세션 설정 및 로그인 상태 변경 완료.');
     } catch (error) {
-      console.error('Keychain 저장 실패', error);
+      console.error('Supabase 세션 설정 실패', error);
     }
   };
 
   const signOut = async () => {
     try {
-      await Keychain.resetGenericPassword();
-      setIsAuthenticated(false);
-      console.log('토큰 삭제 및 로그아웃 완료');
+      await supabase.auth.signOut();  // Supabase 클라이언트를 통해 로그아웃
+      // setIsAuthenticated(false);
+      console.log('Supabase 세션 삭제 및 로그아웃 완료.');
     } catch (error) {
-      console.error('Keychain 삭제 실패', error);
+      console.error('로그아웃 실패', error);
     }
   };
 
   const value = {
     isAuthenticated,
     isLoading,
-    login: signIn,
-    logout: signOut,
+    signIn,
+    signOut,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

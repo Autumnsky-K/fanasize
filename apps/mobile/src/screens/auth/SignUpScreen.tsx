@@ -48,7 +48,6 @@ const SignUpScreen = () => {
     SignUpVars
   >(SIGNUP_MUTATION, {
     onCompleted: completedData => {
-      console.log('가입 성공: ', completedData);
       Alert.alert(
         '가입 성공',
         `환영합니다, ${completedData.signUp.email}님! 로그인 화면으로 이동합니다.`,

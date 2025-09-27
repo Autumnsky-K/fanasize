@@ -55,14 +55,14 @@ const SignInScreen = () => {
   // useNavigation 훅으로 navigation 객체 가져오기
   const navigation = useNavigation<AuthScreenNavigationProp<'SignIn'>>();
 
-  const { login: contextSignIn } = useAuth();
+  const { signIn: contextSignIn } = useAuth();
 
   const [signIn, { loading }] = useMutation<SignInData, SignInVars>(
     SIGNIN_MUTATION,
     {
       onCompleted: data => {
         if (data.signIn.accessToken) {
-          contextSignIn(data.signIn.accessToken);
+          contextSignIn(data.signIn);
         }
       },
       onError: err => {
