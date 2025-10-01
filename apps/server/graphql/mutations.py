@@ -2,6 +2,7 @@ import strawberry
 from strawberry.types import Info
 from typing import Optional
 import datetime
+from supabase import AsyncClient
 
 from .types import User, Session, PostType
 
@@ -9,7 +10,7 @@ from .types import User, Session, PostType
 class Mutation:
   @strawberry.mutation
   async def signUp(self, email: str, password: str, info: Info) -> User:
-    supabase_client = info.context["supabase_client"]
+    supabase_client: AsyncClient = info.context["supabase_client"]
     # Supabase Auth를 사용하여 사용자를 생성
     res = await supabase_client.auth.sign_up({
       "email": email,
@@ -25,7 +26,7 @@ class Mutation:
   
   @strawberry.mutation
   async def signIn(self, email: str, password: str, info: Info) -> Session:
-    supabase_client = info.context["supabase_client"]
+    supabase_client: AsyncClient = info.context["supabase_client"]
     res = await supabase_client.auth.sign_in_with_password({
       "email": email,
       "password": password
@@ -46,7 +47,7 @@ class Mutation:
     self,
     info: Info,
     content: str,
-    image_url: Optional[str] = None
+    image_urls: list[str]  # list[str] 타입으로 필수 인자 변경
   ) -> PostType:
     """새로운 게시물 작성. 인증된 사용자만 호출 가능."""
 
@@ -54,12 +55,15 @@ class Mutation:
     if not user:
       raise Exception("인증이 필요합니다.")
     
-    supabase_client = info.context["supabase_client"]
+    # 이미지 URL 리스트가 비어 있는지 확인
+    if not image_urls:
+      raise Exception("이미지는 최소 1개 이상 필요합니다.")
+    
+    supabase_client: AsyncClient = info.context["supabase_client"]
 
     # 'posts' 테이블에 새로운 데이터를 삽입
     response = await supabase_client.table("posts").insert({
       "content": content,
-      "image_url": image_url,
       "user_id": str(user.id)
     }).execute()
 
@@ -67,14 +71,30 @@ class Mutation:
       raise Exception("게시물을 생성하지 못했습니다.")
     
     new_post_data = response.data[0]
+    new_post_id = new_post_data['id']
+
+    # 생성된 post_id를 사용하여 post_images 테이블에 이미지 URL들 삽입
+    images_to_insert = [
+      {
+        "post_id": new_post_id,
+        "image_url": url,
+        "order": index
+      } for index, url in enumerate(image_urls)
+    ]
+
+    images_response = await supabase_client.table("post_images").insert(images_to_insert).execute()
+
+    if not images_response.data:
+      raise Exception("게시물 이미지를 저장하지 못했습니다.")
 
     created_at_datetime = datetime.datetime.fromisoformat(new_post_data['created_at'])
 
     # 생성된 데이터를 PostType으로 변환하여 반환
+    # TODO: PostType에 image_url 필드 추가
     return PostType(
       id=new_post_data['id'],
       created_at=created_at_datetime,
       content=new_post_data['content'],
       user_id=new_post_data['user_id'],
-      image_url=new_post_data['image_url'],
+      # image_url=new_post_data['image_url'],
     )
