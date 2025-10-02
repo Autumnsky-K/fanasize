@@ -3,6 +3,7 @@ from strawberry.types import Info
 from typing import Optional
 import datetime
 from supabase import AsyncClient
+from postgrest import AsyncPostgrestClient
 
 from .types import User, Session, PostType
 
@@ -10,9 +11,9 @@ from .types import User, Session, PostType
 class Mutation:
   @strawberry.mutation
   async def signUp(self, email: str, password: str, info: Info) -> User:
-    supabase_client: AsyncClient = info.context["supabase_client"]
+    supabase: AsyncClient = info.context["supabase"]
     # Supabase Auth를 사용하여 사용자를 생성
-    res = await supabase_client.auth.sign_up({
+    res = await supabase.auth.sign_up({
       "email": email,
       "password": password
     })
@@ -26,8 +27,8 @@ class Mutation:
   
   @strawberry.mutation
   async def signIn(self, email: str, password: str, info: Info) -> Session:
-    supabase_client: AsyncClient = info.context["supabase_client"]
-    res = await supabase_client.auth.sign_in_with_password({
+    supabase: AsyncClient = info.context["supabase"]
+    res = await supabase.auth.sign_in_with_password({
       "email": email,
       "password": password
     })
@@ -55,37 +56,44 @@ class Mutation:
     if not user:
       raise Exception("인증이 필요합니다.")
     
+    token = info.context.get("access_token")
+    if not token:
+      raise Exception("인증이 필요합니다.")
+
     # 이미지 URL 리스트가 비어 있는지 확인
     if not image_urls:
       raise Exception("이미지는 최소 1개 이상 필요합니다.")
     
-    supabase_client: AsyncClient = info.context["supabase_client"]
+    supabase: AsyncClient = info.context["supabase"]
 
-    # 'posts' 테이블에 새로운 데이터를 삽입
-    response = await supabase_client.table("posts").insert({
-      "content": content,
-      "user_id": str(user.id)
-    }).execute()
+    async with supabase.postgrest.auth(token=token) as pg:
+      # 'posts' 테이블에 새로운 데이터를 삽입
+      # 사용자마다 스코프 생성하여 요청 실행
+      response = await pg.table("posts").insert({
+        "content": content,
+        "user_id": str(user.id)
+      }).execute()
 
-    if not response.data:
-      raise Exception("게시물을 생성하지 못했습니다.")
+      if not response.data:
+        raise Exception("게시물을 생성하지 못했습니다.")
     
-    new_post_data = response.data[0]
-    new_post_id = new_post_data['id']
+      new_post_data = response.data[0]
+      new_post_id = new_post_data['id']
 
-    # 생성된 post_id를 사용하여 post_images 테이블에 이미지 URL들 삽입
-    images_to_insert = [
-      {
-        "post_id": new_post_id,
-        "image_url": url,
-        "order": index
-      } for index, url in enumerate(image_urls)
-    ]
+      # 생성된 post_id를 사용하여 post_images 테이블에 이미지 URL들 삽입
+      images_to_insert = [
+        {
+          "post_id": new_post_id,
+          "image_url": url,
+          "order": index
+        } for index, url in enumerate(image_urls)
+      ]
 
-    images_response = await supabase_client.table("post_images").insert(images_to_insert).execute()
+      images_response = await pg.table("post_images").insert(images_to_insert).execute()
 
-    if not images_response.data:
-      raise Exception("게시물 이미지를 저장하지 못했습니다.")
+      if not images_response.data:
+        # TODO: 이미 생성된 post 삭제 후 롤백하는 로직 필요
+        raise Exception("게시물 이미지를 저장하지 못했습니다.")
 
     created_at_datetime = datetime.datetime.fromisoformat(new_post_data['created_at'])
 

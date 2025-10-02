@@ -9,16 +9,19 @@ const LIST_POSTS_QUERY = gql`
     listPosts {
       id
       content
-      imageUrl
       createdAt
       userId
+      images {
+        imageUrl
+        order
+      }
     }
   }
 `;
 
 const CREATE_POST_MUTATION = gql`
-  mutation CreatePost($content: String!) {
-    createPost(content: $content) {
+  mutation CreatePost($content: String!, $imageUrls: [String!]!) {
+    createPost(content: $content, imageUrls: $imageUrls) {
       id
     }
   }
@@ -33,7 +36,7 @@ interface PostState {
   loading: boolean;
   error: string | null;
   fetchPosts: () => Promise<void>;
-  createPost: (content: string) => Promise<void>;
+  createPost: (content: string, imageUrls: string[]) => Promise<void>;
 }
 
 export const usePostStore = create<PostState>((set, get) => ({
@@ -62,21 +65,20 @@ export const usePostStore = create<PostState>((set, get) => ({
       }
     }
   },
-  createPost: async (content: string) => {
+  createPost: async (content: string, imageUrls: string[]) => {
     try {
-      // TODO: 이미지 업로드 기능 구현. content와 함께 imageUrl도 인자로 받아 처리 필요.
-      // 1. 이미지 선택 (Image Picker)
-      // 2. 이미지 변환 (WebP) 및 supabase 스토리지에 업로드
-      // 3. 업로드 된 이미지 URL을 아래 variables에 추가
       await client.mutate({
         mutation: CREATE_POST_MUTATION,
-        variables: { content },
+        variables: { content, imageUrls },
       });
+      // 성공 후 게시물 목록을 새로고침하여 방금 작성한 글을 바로 확인
       await get().fetchPosts();
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        console.error('포스트를 게시하지 못했어요: ', e.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('포스트를 게시하지 못했어요: ', error.message);
       }
+      console.log(error);
+      throw new Error('알 수 없는 오류로 게시물 작성에 실패했습니다.')
     }
   }
 }));

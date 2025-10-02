@@ -1,14 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Dimensions
+} from 'react-native';
 
 // Post 데이터 타입 정의
 // TODO: 추후 shared-types 패키지로 이동하여 공유 가능
+interface PostImage {
+  imageUrl: string;
+  order: number;
+}
+
 export interface Post {
   id: string;
   content: string | null;
-  imageUrl: string | null;
+  // imageUrl: string | null;
   createdAt: string;
   userId: string;
+  images: PostImage[];
 }
 
 interface PostCardProps {
@@ -16,6 +28,9 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
+
+  const displayImage = post.images && post.images.length > 0 ? post.images[0] : null;
+
   return (
     <View style={styles.container}>
       {/* 사용자 정보 (임시)*/}
@@ -29,10 +44,18 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {/* 게시물 내용 */}
       {post.content && <Text style={styles.content}>{post.content}</Text>}
 
-      {/* 게시물 이미지 */}
-      {post.imageUrl && (
-        <Image source={{ uri: post.imageUrl }} style={styles.image} />
+      {displayImage && (
+        <Image
+          source={{ uri: displayImage.imageUrl }}
+          style={styles.image}
+          resizeMode='cover'
+        />
       )}
+
+      {/* 게시물 이미지 */}
+      {/* {post.imageUrl && (
+        <Image source={{ uri: post.imageUrl }} style={styles.image} />
+      )} */}
     </View>
   );
 };
