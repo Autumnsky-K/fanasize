@@ -4,7 +4,7 @@ from strawberry.types import Info
 from supabase import AsyncClient
 import datetime
 
-from .types import PostType, PostImageType
+from .types import PostType, PostImageType, ProfileType
 
 @strawberry.type
 class Query:
@@ -13,25 +13,38 @@ class Query:
     """모든 게시물 목록을 최신순으로 조회"""
     supabase: AsyncClient = info.context["supabase"]
 
-    response = await supabase.table("posts").select(
-      "*, post_images(*)"
-    ).order("created_at", desc=True).execute()
+    response = await supabase.rpc("get_posts_with_details").execute()
 
     if not response.data:
       return []
     
     posts = []
-    for post_data in response.data:
-      raw_images = post_data.pop('post_images', [])
+    for row in response.data:
+      post_data = row['post_details']
 
-      images_list = [PostImageType(image_url=img['image_url'], order=img['order']) for img in raw_images]
+      author_data = post_data.get('author') or {}
+      images_data = post_data.get('images') or []
+
+      author_instance = ProfileType(
+        id=author_data.get('id'),
+        handle=author_data.get('handle'),
+        username=author_data.get('username'),
+        avatar_url=author_data.get('avatar_url')
+      )
+
+      images_list = [PostImageType(
+        image_url=img.get('imageUrl'),
+        order=img.get('order')
+      ) for img in images_data]
 
       post_instance = PostType(
         id=post_data['id'],
-        created_at=datetime.datetime.fromisoformat(post_data['created_at']),
-        user_id=post_data['user_id'],
+        created_at=datetime.datetime.fromisoformat(post_data['createdAt']),
+        user_id=post_data['userId'],
         content=post_data['content'],
-        images=images_list  # images 필드에 직접 할당
+        author=author_instance,
+        images=images_list,  # images 필드에 직접 할당
       )
       posts.append(post_instance)
+
     return posts

@@ -5,7 +5,7 @@ import datetime
 from supabase import AsyncClient
 from postgrest import AsyncPostgrestClient
 
-from .types import User, Session, PostType
+from .types import User, Session, PostType, PostImageType, ProfileType
 
 @strawberry.type
 class Mutation:
@@ -66,41 +66,49 @@ class Mutation:
     
     supabase: AsyncClient = info.context["supabase"]
 
-    async with supabase.postgrest.auth(token=token) as pg:
-      # 'posts' 테이블에 새로운 데이터를 삽입
-      # 사용자마다 스코프 생성하여 요청 실행
-      response = await pg.table("posts").insert({
-        "content": content,
-        "user_id": str(user.id)
-      }).execute()
+    pg: AsyncPostgrestClient = supabase.postgrest.auth(token=token)
+    # 'posts' 테이블에 새로운 데이터를 삽입
+    # 사용자마다 스코프 생성하여 요청 실행
+    response = await pg.table("posts").insert({
+      "content": content,
+      "user_id": str(user.id)
+    }).execute()
 
-      if not response.data:
-        raise Exception("게시물을 생성하지 못했습니다.")
+    if not response.data:
+      raise Exception("게시물을 생성하지 못했습니다.")
+  
+    new_post_data = response.data[0]
+    new_post_id = new_post_data['id']
+
+    # 생성된 post_id를 사용하여 post_images 테이블에 이미지 URL들 삽입
+    images_to_insert = [
+      {
+        "post_id": new_post_id,
+        "image_url": url,
+        "order": index
+      } for index, url in enumerate(image_urls)
+    ]
+    images_response = await pg.table("post_images").insert(images_to_insert).execute()
+
+    if not images_response.data:
+      # TODO: 이미 생성된 post 삭제 후 롤백하는 로직 필요
+      raise Exception("게시물 이미지를 저장하지 못했습니다.")
     
-      new_post_data = response.data[0]
-      new_post_id = new_post_data['id']
+    images_list = [PostImageType(image_url=img['image_url'], order=img['order']) for img in images_to_insert]
 
-      # 생성된 post_id를 사용하여 post_images 테이블에 이미지 URL들 삽입
-      images_to_insert = [
-        {
-          "post_id": new_post_id,
-          "image_url": url,
-          "order": index
-        } for index, url in enumerate(image_urls)
-      ]
-
-      images_response = await pg.table("post_images").insert(images_to_insert).execute()
-
-      if not images_response.data:
-        # TODO: 이미 생성된 post 삭제 후 롤백하는 로직 필요
-        raise Exception("게시물 이미지를 저장하지 못했습니다.")
+    profile_response = await supabase.table("profiles").select("*").eq("id", user.id).single().execute()
+    author_instance = ProfileType(**profile_response.data)
 
     created_at_datetime = datetime.datetime.fromisoformat(new_post_data['created_at'])
+
+    pg.aclose()
 
     # 생성된 데이터를 PostType으로 변환하여 반환
     return PostType(
       id=new_post_data['id'],
       created_at=created_at_datetime,
-      content=new_post_data['content'],
       user_id=new_post_data['user_id'],
+      content=new_post_data['content'],
+      images=images_list,
+      author=author_instance, 
     )

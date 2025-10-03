@@ -15,6 +15,12 @@ const LIST_POSTS_QUERY = gql`
         imageUrl
         order
       }
+      author {
+        id
+        handle
+        username
+        avatarUrl
+      }
     }
   }
 `;
