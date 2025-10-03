@@ -7,22 +7,20 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Modal,
-  TextInput,
   Button,
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Asset, launchImageLibrary } from 'react-native-image-picker';
-import { ScrollView } from 'react-native-gesture-handler';
 import RNFS from 'react-native-fs';
 import { decode } from 'base64-arraybuffer';
+import styled from 'styled-components/native';
 
 import { supabase } from '../../libs/auth';
 import PostCard, { Post } from '../../components/PostCard';
 import { usePostStore } from '../../store/postStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = () => {
   // Zustand 스토어에서 상태와 액션 가져오기
@@ -132,45 +130,42 @@ const HomeScreen = () => {
   // 초기 데이터 로딩 시에만 전체 화면 로딩 인디케이터 표시
   if (loading && posts.length === 0) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <Centered>
         <ActivityIndicator size="large" />
-      </SafeAreaView>
+      </Centered>
     );
   }
 
   // 에러 발생 시 에러 메시지 표시
   if (error) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <Centered>
         <Text>에러가 발생했습니다: {error}</Text>
-      </SafeAreaView>
+      </Centered>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeArea>
       <FlatList
         data={posts}
         renderItem={({ item }: { item: Post }) => <PostCard post={item} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>게시물이 아직 없습니다.</Text>
-            <Text style={styles.emptyText}>첫 게시물을 작성해보세요!</Text>
-          </View>
+          <EmptyContainer>
+            <EmptyText>게시물이 아직 없습니다.</EmptyText>
+            <EmptyText>첫 게시물을 작성해보세요!</EmptyText>
+          </EmptyContainer>
         )}
         refreshing={loading}
         onRefresh={fetchPosts}
       />
 
       {/* 글쓰기 버튼 (Floating Action Button) */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      <Fab onPress={() => setModalVisible(true)}>
+        <FabText>+</FabText>
+      </Fab>
 
       {/* 글쓰기 모달 */}
       <Modal
@@ -179,45 +174,35 @@ const HomeScreen = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <KeyboardAvoidingView
+        <ModalContainer
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
         >
-          <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>새 게시물 작성</Text>
-            <TextInput
-              style={styles.input}
+          <ModalView>
+            <ModalTitle>새 게시물 작성</ModalTitle>
+            <Input
               placeholder='무슨 생각을 하고 있나요?'
               multiline
               value={content}
               onChangeText={setContent}
             />
-            <ScrollView horizontal style={styles.imagePreviewContainer}>
+            <ImagePreviewContainer horizontal>
               {selectedImages.map(image => (
-                <View key={image.uri} style={styles.previewImageWrapper}>
-                  <Image
-                    source={{ uri: image.uri }}
-                    style={styles.previewImage}
-                  />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
+                <PreviewImageWrapper key={image.uri}>
+                  <PreviewImage source={{ uri: image.uri }} />
+                  <RemoveImageButton
                     onPress={() => handleRemoveImage(image.uri!)}
                   >
-                    <Text style={styles.removeImageText}>X</Text>
-                  </TouchableOpacity>
-                </View>
+                    <RemoveImageText>X</RemoveImageText>
+                  </RemoveImageButton>
+                </PreviewImageWrapper>
               ))}
-            </ScrollView>
+            </ImagePreviewContainer>
 
+            <AddImageButton onPress={handlePickImage}>
+              <AddImageButtonText>+ 이미지 추가</AddImageButtonText>
+            </AddImageButton>
 
-            <TouchableOpacity
-              style={styles.addImageButton}
-              onPress={handlePickImage}
-            >
-              <Text style={styles.addImageButtonText}>+ 이미지 추가</Text>
-            </TouchableOpacity>
-
-            <View style={styles.modalButtons}>
+            <ModalButtons>
               <Button
                 title='취소'
                 onPress={() => setModalVisible(false)}
@@ -228,151 +213,169 @@ const HomeScreen = () => {
                 onPress={handleCreatePost}
                 disabled={isUploading}
               />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+            </ModalButtons>
+          </ModalView>
+        </ModalContainer>
       </Modal>
-    </SafeAreaView>
+    </SafeArea>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContent: {
-    padding: 10,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center'
-  },
-  fab: {
-    position: 'absolute',
-    right: 30,
-    bottom: 30,
-    backgroundColor: '#6200ee',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+const SafeArea = styled(SafeAreaView)`
+  flex: 1;
+  justify-content: center;
+`;
+
+const Title = styled.Text`
+  font-size: 24px;
+  font-weight: bold;
+`;
+
+const Centered = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ListContent = styled.View`
+  padding: 10px;
+`;
+
+const EmptyContainer = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+`;
+
+const EmptyText = styled.Text`
+  font-size: 16px;
+  color: #888;
+  text-align: center;
+`;
+
+const Fab = styled(TouchableOpacity).attrs({
+  style: {
     elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { 
-      width: 0,
-      height: 2
-    },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-  },
-  fabText: {
-    fontSize: 30,
-    color: '#fff',
-    lineHeight: 32,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)'
-  },
-  modalView: {
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+  }
+})`
+  position: absolute;
+  right: 30px;
+  bottom: 30px;
+  background-color: #6200ee;
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  justify-content: center;
+  align-items: center;
+`;
+
+const FabText = styled.Text`
+  font-size: 30px;
+  color: #fff;
+  line-height: 32px;
+`;
+
+const ModalContainer = styled(KeyboardAvoidingView)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+`;
+
+const ModalView = styled(View).attrs({
+  style: {
     elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  input: {
-    width: '100%',
-    height: 150,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
+  }
+})`
+  width: 90%;
+  background-color: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  align-items: center;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+`;
+
+const ModalTitle = styled.Text`
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+`;
+
+const Input = styled.TextInput`
+  width: 100%;
+  height: 150px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  vertical-align: top;
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 24px;
+`;
+
+const ModalButtons = styled.View`
+  flex-direction: row;
+  justify-content: space-around;
+  width: 100%;
+`;
+
+const AddImageButton = styled.TouchableOpacity`
+  width: 100%;
+  padding: 15px;
+  background-color: #eef0f2;
+  border-radius: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const AddImageButtonText = styled.Text`
+  font-size: 16px;
+  color: #555;
+  font-weight: bold;
+`;
+
+const ImagePreviewContainer = styled.ScrollView`
+  width: 100%;
+  margin-bottom: 15px;
+  min-height: 100px;
+`;
+
+const PreviewImageWrapper = styled.View`
+  position: relative;
+  margin-right: 10px;
+`;
+
+const PreviewImage = styled.Image`
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  background-color: #eee;
+`;
+
+const RemoveImageButton = styled.TouchableOpacity`
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+`;
+
+const RemoveImageText = styled.Text`
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+`;
+
+const styles = StyleSheet.create({
+  listContent: {
     padding: 10,
-    textAlignVertical: 'top',
-    marginBottom: 20,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  addImageButton: {
-    width: '100%',
-    padding: 15,
-    backgroundColor: '#eef0f2',
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  addImageButtonText: {
-    fontSize: 16,
-    color: '#555',
-    fontWeight: 'bold',
-  },
-  imagePreviewContainer: {
-    width: '100%',
-    marginBottom: 15,
-    minHeight: 100,
-  },
-  previewImageWrapper: {
-    position: 'relative',
-    marginRight: 10,
-  },
-  previewImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-    backgroundColor: '#eee',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeImageText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 12,
   },
 });
 

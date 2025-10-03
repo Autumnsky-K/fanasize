@@ -12,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { useNavigation } from '@react-navigation/native';
+import styled from 'styled-components/native';
+
 import { AuthScreenNavigationProp } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -86,117 +88,127 @@ const SignInScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>로그인</Text>
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>이메일</Text>
-            <TextInput
-              style={styles.input}
+    <SafeArea>
+      <Container>
+        <Title>로그인</Title>
+        <Form>
+          <InputContainer>
+            <InputLabel>이메일</InputLabel>
+            <Input
               placeholder="이메일을 입력하세요"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
             />
-          </View>
+          </InputContainer>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>비밀번호</Text>
-            <TextInput
-              style={styles.input}
+          <InputContainer>
+            <InputLabel>비밀번호</InputLabel>
+            <Input
               placeholder="비밀번호를 입력하세요"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
             />
-          </View>
+          </InputContainer>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <Button
             onPress={handleSignIn}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>로그인</Text>
+              <ButtonText>로그인</ButtonText>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.secondaryButton]}
+          </Button>
+          <SecondaryButton
             onPress={navigateToSignUp}
           >
-            <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+            <SecondaryButtonText>
               계정이 없으신가요? 회원가입
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </SafeAreaView>
+            </SecondaryButtonText>
+          </SecondaryButton>
+        </Form>
+      </Container>
+    </SafeArea>
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 48,
-    textAlign: 'center',
-  },
-  form: {
-    width: '100%',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#333',
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
-  },
-  button: {
-    height: 50,
-    backgroundColor: '#007bff',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonDisabled: {
-    backgroundColor: '#a0cfff',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#007bff',
-  },
-  secondaryButtonText: {
-    color: '#007bff',
-  },
-});
+const SafeArea = styled(SafeAreaView)`
+  flex: 1;
+  background-color: #fff;
+`;
+
+const Container = styled.View`
+  flex: 1;
+  padding: 24px;
+  justify-content: center;
+`;
+
+const Title = styled.Text`
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 48px;
+  text-align: center;
+`;
+
+const Form = styled.View`
+  width: 100%;
+`;
+
+const InputContainer = styled.View`
+  margin-bottom: 16px;
+`;
+
+const InputLabel = styled.Text`
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #333;
+`;
+
+const Input = styled.TextInput`
+  height: 50px;
+  border-width: 1px;
+  border-color: #ddd;
+  border-radius: 8px;
+  padding-left: 16px;
+  padding-right: 16px;
+  font-size: 16px;
+`;
+
+const Button = styled.TouchableOpacity`
+  height: 50px;
+  border-radius: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+
+  background-color: ${props => (props.disabled ? '#a0cfff' : '#007bff')} ;
+`;
+
+const ButtonText = styled.Text`
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+`;
+
+const SecondaryButton = styled.TouchableOpacity`
+  height: 50px;
+  border-radius: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  background-color: transparent;
+  border-width: 1px;
+  border-color: #007bff;
+`;
+
+const SecondaryButtonText = styled.Text`
+  color: #007bff;
+  font-size: 18px;
+  font-weight: bold;
+`;
 
 export default SignInScreen;
