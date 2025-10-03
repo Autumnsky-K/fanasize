@@ -284,3 +284,57 @@
     *   **`Keychain` 저장/로드 문제:** `supabase-js`가 `AsyncStorage`를 기대하는 문제. `react-native-keychain` 대신 `@react-native-async-storage/async-storage`로 전환하여 해결.
 
 - **결과:** 최종적으로 토큰 만료 시 자동으로 세션을 갱신하고 요청을 재시도하는 기능이 정상 동작하는 것을 확인했습니다.
+
+---
+
+## 2025년 9월 29일
+
+### 19. 게시물 다중 이미지 기능 구현 및 연동
+
+- **목표:** 게시물 생성 시 여러 이미지를 첨부하고, 조회 시 해당 이미지들을 볼 수 있는 기능을 구현합니다.
+
+- **백엔드 수정:**
+    - **DB 스키마 변경:** 기존 `posts` 테이블의 `image_url` 컬럼을 제거하고, `post_images` 테이블을 새로 생성하여 게시물과 이미지가 1:N 관계를 갖도록 수정했습니다.
+    - **`create_post` 뮤테이션:** 다중 이미지 URL을 배열로 받아 `posts`와 `post_images` 테이블에 나누어 저장하도록 로직을 변경했습니다.
+    - **`list_posts` 쿼리:** 게시물 조회 시 `post_images` 테이블을 함께 조회하여 N+1 문제 없이 효율적으로 이미지 데이터를 가져오도록 수정했습니다.
+    - **`context.py` 아키텍처 개선:** 모든 API 요청이 공유하는 '공용 클라이언트'의 상태를 변경하는 방식의 문제점을 파악하고, `supabase.postgrest.auth(token)` 컨텍스트 매니저를 사용하여 매 요청마다 격리된 인증 세션을 사용하도록 수정했습니다. 이를 통해 서버 재시작 후 인증이 풀리는 문제를 해결하고 서버 안정성을 대폭 향상시켰습니다.
+    - **RLS 정책 추가:** `storage.objects`와 `posts` 테이블에 `INSERT` 및 `SELECT`를 위한 RLS 정책을 추가하여 보안을 강화했습니다.
+
+- **프론트엔드 수정:**
+    - **라이브러리 설치:** `react-native-image-picker`, `react-native-fs` 등을 설치하여 이미지 선택 및 파일 시스템 접근 기능을 구현했습니다.
+    - **게시물 작성 UI:** `HomeScreen`의 작성 모달에 여러 이미지를 선택하고, 썸네일로 미리보며, 개별적으로 삭제할 수 있는 UI를 구현했습니다.
+    - **이미지 업로드 로직:** `handleCreatePost` 함수 내에서, 선택된 이미지들을 `base64`로 변환 후 `ArrayBuffer`로 만들어 Supabase 스토리지에 업로드하고, 반환된 URL들로 `createPost` 뮤테이션을 호출하는 전체 흐름을 구현했습니다.
+    - **게시물 조회 로직:** `postStore`의 `LIST_POSTS_QUERY`에 `images` 필드를 추가하고, `PostCard` 컴포넌트가 `images` 배열을 받아 첫 번째 이미지를 화면에 표시하도록 타입 정의와 렌더링 로직을 모두 수정했습니다.
+
+- **결과:** 수많은 디버깅 과정을 거쳐, 다중 이미지를 포함한 게시물을 안정적으로 생성하고 조회하는 기능의 전체 플로우를 완성했습니다.
+
+### 20. 스타일 시스템 도입 및 리팩토링
+
+- **목표:** `StyleSheet.create` API의 번거로움을 해소하고, 컴포넌트 기반의 선언적인 스타일링 방식을 도입하여 코드의 가독성과 유지보수성을 향상시킵니다.
+
+- **라이브러리 선정:** `StyleX`와 `styled-components`를 비교 검토했습니다. StyleX는 성능상 이점이 있으나 React Native 환경에서는 아직 실험적이고 추가 설정이 필요하다는 점을 고려하여, React Native 생태계에서 오랫동안 검증되고 안정성이 높은 `styled-components`를 최종적으로 선택했습니다.
+
+- **설치 및 설정:**
+    - `styled-components`와 타입 정의(`@types/styled-components-react-native`), 그리고 개발 편의성을 위한 `babel-plugin-styled-components`를 설치했습니다.
+    - `babel.config.js`에 플러그인을 추가하여 설정을 완료했습니다.
+
+- **컴포넌트 리팩토링:**
+    - `PostCard.tsx`와 `HomeScreen.tsx` 컴포넌트의 기존 `StyleSheet` 코드를 모두 제거하고, `styled.View`, `styled.Text` 등을 사용하는 `styled-components` 방식으로 코드를 전면 리팩토링했습니다.
+    - 이 과정에서 `props`를 활용한 동적 스타일링(예: 로딩 상태에 따른 버튼 비활성화) 적용 방법을 학습했습니다.
+
+### 21. 사용자 프로필 기능 기반 마련
+
+- **목표:** 각 게시물에 작성자의 프로필 이미지와 닉네임을 표시하기 위한 데이터베이스 기반을 구축합니다.
+
+- **DB 스키마 설계 및 변경:**
+    - `auth.users`와 1:1 관계를 가지는 `profiles` 테이블을 새로 생성했습니다.
+    - 동명이인을 허용하는 `username`과, 사용자를 고유하게 식별하는 `handle` 개념을 도입하여 테이블을 설계했습니다.
+    - 신규 회원가입 시, `auth.users` 테이블의 `INSERT`에 반응하는 트리거를 생성하여 `profiles` 테이블에 해당 유저의 프로필 행이 자동으로 생성되도록 구현했습니다. 이 과정에서 `handle`의 `CHECK` 제약조건과 UUID의 하이픈이 충돌하는 문제를 `replace()` 함수로 해결했습니다.
+    - `profiles` 테이블에 대한 RLS 정책(SELECT, UPDATE)을 설정하여 보안을 강화했습니다.
+
+- **백엔드 API 수정:**
+    - `types.py`에 `ProfileType`을 새로 정의하고, `PostType`이 `author` 필드를 갖도록 수정했습니다.
+    - `queries.py`의 `list_posts` 함수가 `profiles` 테이블을 JOIN하여 게시물과 함께 작성자 정보를 한번에 조회하도록, 데이터베이스 함수(RPC)를 생성하고 이를 호출하는 방식으로 변경했습니다. 이 과정에서 PostgREST의 간접 관계 조회 제약을 RPC로 해결하고, `__init__`의 non-nullable 필드 오류, `dict` object has no attribute 오류 등을 디버깅하며 최종적으로 안정적인 조회 로직을 완성했습니다.
+
+- **프론트엔드 API 연동:**
+    - `postStore.ts`의 `LIST_POSTS_QUERY`에 `author`와 그 하위 필드들을 추가하여, 프론트엔드에서 프로필 데이터를 요청하도록 수정했습니다.
