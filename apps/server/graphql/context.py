@@ -10,6 +10,7 @@ async def get_context(request: Request, supabase: AsyncClient = Depends(create_s
   이 컨텍스트 딕셔너리에 Supabase Client를 담아 전달
   """
   user = None
+  token = None
   authorization = request.headers.get("Authorization")
 
   # supabase: AsyncClient = dependencies.supabase_client
