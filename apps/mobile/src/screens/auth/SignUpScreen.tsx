@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AuthScreenNavigationProp } from '../../navigation/types';
 import styled from 'styled-components/native';
+import TextLogo from '../../../assets/fanasize-text-logo.svg';
 
 const SIGNUP_MUTATION = gql`
   mutation SignUp($email: String!, $password: String!) {
@@ -76,6 +77,9 @@ const SignUpScreen = () => {
     <SafeArea>
       <Container>
         <InputContainer>
+          <LogoContainer>
+            <TextLogo />
+          </LogoContainer>
           <Title>회원가입</Title>
           <Form>
             <InputContainer>
@@ -126,6 +130,11 @@ const SignUpScreen = () => {
 const SafeArea = styled(SafeAreaView)`
   flex: 1;
   background-color: #fff;
+`;
+
+const LogoContainer = styled.View`
+  margin-bottom: 32px;
+  align-items: center;
 `;
 
 const Container = styled.View`

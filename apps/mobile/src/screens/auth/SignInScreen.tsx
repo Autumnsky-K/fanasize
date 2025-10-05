@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import {
   Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +8,7 @@ import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { useNavigation } from '@react-navigation/native';
 import styled from 'styled-components/native';
+import TextLogo from '../../../assets/fanasize-text-logo.svg';
 
 import { AuthScreenNavigationProp } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -90,6 +86,9 @@ const SignInScreen = () => {
   return (
     <SafeArea>
       <Container>
+        <LogoContainer>
+          <TextLogo />
+        </LogoContainer>
         <Title>로그인</Title>
         <Form>
           <InputContainer>
@@ -139,6 +138,11 @@ const SignInScreen = () => {
 const SafeArea = styled(SafeAreaView)`
   flex: 1;
   background-color: #fff;
+`;
+
+const LogoContainer = styled.View`
+  margin-bottom: 32px;
+  align-items: center;
 `;
 
 const Container = styled.View`
