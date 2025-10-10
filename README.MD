@@ -2,6 +2,8 @@
 
 > 서로가 서로의 팬이 되는 소셜 미디어 플랫폼 (MVP)
 
+![Image](https://github.com/user-attachments/assets/6534f7b3-74e8-44b4-9c82-e63f07bd9f6d)
+
 ## 1. 프로젝트 개요
 
 **Fanasize**는 React Native와 FastAPI, Supabase를 사용하여 모바일 애플리케이션을 구축하는 과정을 담은 프로젝트입니다. 복잡한 시스템을 설계하고, 발생 가능한 기술적 문제를 해결하며, 안정적인 아키텍처를 만들어나가는 과정을 목표로 합니다.
