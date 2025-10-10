@@ -24,7 +24,7 @@ async def get_context(request: Request, supabase: AsyncClient = Depends(create_s
     except Exception as e:
       # 토큰이 유효하지 않을 경우 user는 None으로 유지
       print(f"--- Token Validation Error: {e} ---")
-      pass
+      raise PermissionError("인증이 필요합니다.")
 
   return {
       "supabase": supabase,
