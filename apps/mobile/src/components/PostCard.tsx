@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Dimensions, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
+import Carousel from './Carousel';
+import { LayoutChangeEvent } from 'react-native';
 
 // Post 데이터 타입 정의
 // TODO: 추후 shared-types 패키지로 이동하여 공유 가능
-interface PostImage {
+export interface PostImage {
   imageUrl: string;
   order: number;
 }
@@ -29,10 +31,16 @@ interface PostCardProps {
   post: Post;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post }) => {
+const PostCard = ({ post }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
   // TODO: 실제 좋아요 데이터 연결 필요
   const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 100));
+  const [carouselContainerWidth, setCarouselContainerWidth] = useState(0);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setCarouselContainerWidth(width);
+  }
   
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -43,8 +51,6 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     const date = new Date(dateString);
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
   };
-  
-  const displayImage = post.images && post.images.length > 0 ? post.images[0] : null;
 
   const displayName = post.author?.username || post.author?.handle;
 
@@ -72,12 +78,21 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {post.content && <Content>{post.content}</Content>}
 
       {/* 게시물 이미지 */}
-      {displayImage && (
+      {/* {displayImage && (
         <PostImageStyled
           source={{ uri: displayImage.imageUrl }}
           resizeMode='cover'
         />
-      )}
+      )} */}
+
+      <View onLayout={handleLayout}>
+        {carouselContainerWidth > 0 && post.images && post.images.length > 0 && (
+          <Carousel
+            images={post.images}
+            width={carouselContainerWidth}
+          />
+        )}
+      </View>
 
       <Actions>
         <ActionGroup>
@@ -156,18 +171,6 @@ const Content = styled.Text`
   line-height: 22px;
   padding: 0 12px 12px 12px;
   color: #333;
-`;
-
-const PostImage = styled.Image`
-  width: 100%;
-  height: ${Dimensions.get('window').width}px;
-`;
-
-const PostImageStyled = styled.Image`
-  width: 100%;
-  height: ${Dimensions.get(`window`).width}px;
-  border-radius: 8px;
-  margin-top: 5px;
 `;
 
 const Actions = styled.View`
