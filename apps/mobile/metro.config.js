@@ -19,6 +19,7 @@ const config = {
     unstable_enableSymlinks: true, // this enable the use of Symlinks
     assetExts: assetExts.filter((ext) => ext !== 'svg'),
     sourceExts: [...sourceExts, 'svg'],
+    nodeModulesPaths: [path.resolve(path.join(__dirname, '..', '..', 'node_modules'))],
   },
   // this specifies the folder where are located the node_modules for the project
   watchFolders: [path.join(__dirname, '..', '..')],
